@@ -16,7 +16,7 @@ Dependencias:
 using namespace std;
 
 #define tasaFPS 60
-GLuint marca, rueda, manilla;
+GLuint marca, rueda, manillaH, manillaS, manillaM;
 
 //Variable dependiente del timpo
 static float alfa = 0;
@@ -63,15 +63,41 @@ void init()
 
 	glEndList();
 
-	//Manilla
-	manilla = glGenLists(1);
-	glNewList(manilla, GL_COMPILE);
+	//ManillaH
+	manillaH = glGenLists(1);
+	glNewList(manillaH, GL_COMPILE);
 
 	glPushMatrix();
 	glColor3f(0, 0, 0);
 	glRotatef(-90, 1, 0, 0);
 	glTranslatef(0, 0, 0.1);
-	glutSolidCone(0.05, 0.5, 5, 5);
+	glutSolidCone(0.05, 0.4, 5, 5);
+	glPopMatrix();
+
+	glEndList();
+
+	//ManillaS
+	manillaS = glGenLists(1);
+	glNewList(manillaS, GL_COMPILE);
+
+	glPushMatrix();
+	glColor3f(1, 0, 0);
+	glRotatef(-90, 1, 0, 0);
+	glTranslatef(0, 0, 0.1);
+	glutWireCone(0.05, 0.7, 10, 10);
+	glPopMatrix();
+
+	glEndList();
+
+	//ManillaM
+	manillaM = glGenLists(1);
+	glNewList(manillaM, GL_COMPILE);
+
+	glPushMatrix();
+	glColor3f(0, 1, 0);
+	glRotatef(-90, 1, 0, 0);
+	glTranslatef(0, 0, 0.1);
+	glutWireCone(0.05, 0.6, 5, 5);
 	glPopMatrix();
 
 	glEndList();
@@ -117,9 +143,7 @@ void display()
 	glLoadIdentity();
 
 	// Situamos y orientamos la camara
-	gluLookAt(0, 1, -3, 0, 0, 0, 0, 1, 0);
-
-	//ejes();
+	gluLookAt(0, 0, -3, 0, 0, 0, 0, 1, 0);
 
 	//rueda
 	glPushMatrix();
@@ -133,22 +157,30 @@ void display()
 	glutWireSphere(0.1, 4, 25);
 	glPopMatrix();
 
-	//manilla
+	//esfera exterior
+	glPushMatrix();
+	glColor3f(0.2, 0.3, 0.5);
+	glRotatef(-alfa / 10, 0, 1, 0);
+	glutWireSphere(1, 25, 25);
+	glPopMatrix();
+
+	//manillaS
 	glPushMatrix();
 	glRotatef(6*alfaS, 0, 0, 1);
-	glCallList(manilla);
+	glCallList(manillaS);
 	glPopMatrix();
 
-	//manilla
+	//manillaM
 	glPushMatrix();
 	glRotatef(6 * alfaM, 0, 0, 1);
-	glCallList(manilla);
+	glRotatef(alfa / 10, 0, 1, 0);
+	glCallList(manillaM);
 	glPopMatrix();
 
-	//manilla
+	//manillaH
 	glPushMatrix();
 	glRotatef(30 * alfaH, 0, 0, 1);
-	glCallList(manilla);
+	glCallList(manillaH);
 	glPopMatrix();
 
 	glutSwapBuffers();
@@ -167,25 +199,14 @@ void reshape(GLint w, GLint h)
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 
-	/*
-	// Camara ortografica con isometria
-	if(ra<1)
-	 glOrtho(-2, 2, -2/ra, 2/ra, -1, 10);
-	else
-	 glOrtho(-2*ra, 2*ra, -2, 2, -1, 10);
-	*/
-
 	// Camara perspectiva
 	gluPerspective(40, ra, 0.1, 100);
 }
 
 void update()
 {
-	//callbak de atencion al evento idle
-	//cambiar la variable temporal si atender al timpo
-	//alfa += 0.1;
 
-	//Control del timepo transcurrifo xD
+	//Control del timepo transcurrido
 	static int antes = glutGet(GLUT_ELAPSED_TIME);
 	int ahora = glutGet(GLUT_ELAPSED_TIME);
 	float tiempotranscurrido = float(ahora - antes) / 1000;
@@ -231,28 +252,6 @@ void onTimerS(int tiempo)
 
 }
 
-void onTimerM(int tiempo)
-{
-	//Encolar un nuevo temporizador
-	glutTimerFunc(tiempo, onTimerM, tiempo);
-
-	alfaM += 1;
-
-	glutPostRedisplay();
-
-}
-
-void onTimerH(int tiempo)
-{
-	//Encolar un nuevo temporizador
-	glutTimerFunc(tiempo, onTimerH, tiempo);
-
-	alfaH += 1;
-
-	glutPostRedisplay();
-
-}
-
 void main(int argc, char** argv)
 // Programa principal
 {
@@ -266,11 +265,8 @@ void main(int argc, char** argv)
 	// Registro de callbacks	
 	glutDisplayFunc(display);
 	glutReshapeFunc(reshape);
-	//glutIdleFunc(update); //captura iddle
 	glutTimerFunc(1000 / tasaFPS, onTimer, 1000 / tasaFPS);
 	glutTimerFunc(1000, onTimerS, 1000);
-	//glutTimerFunc(1000*60, onTimerM, 1000*60);
-	//glutTimerFunc(1000 * 3600, onTimerH, 1000 * 3600);
 
 	// Bucle de atencion a eventos
 	glutMainLoop();
