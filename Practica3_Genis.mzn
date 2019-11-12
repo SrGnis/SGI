@@ -48,6 +48,8 @@ constraint forall (i,j in 1..9 where j<i) (capa[j,1]-capa[i,1] < 0);
 constraint forall (i,j in 1..6 where j<i) (capa[j,2]-capa[i,2] > 0);
 
 solve satisfy;
+%solve minimize abs(capa[8,1]-capa[9,1]) + abs(capa[1,2]-capa[2,2]);
+%solve minimize abs(capa[7,1]-capa[7,2]) - abs(capa[3,1]-capa[9,2]);
 
 output["Capa: \t|1| \t|2| \t|3| \t|4| \t|5| \t|6| \t|7| \t|8| \t|9| \n"];
 
