@@ -11,7 +11,7 @@ constraint abs(capa[1,1]-capa[2,1])>= 2 /\ abs(capa[5,1]-capa[2,1])>= 2 /\ abs(c
 
 %-B-
 /*E3A no puede aplicarse junto a ninguna capa que sea aplicada también de modo A*/
-constraint forall(i in 1..9 where i!=3) (abs(capa[i,1]-capa[3,1])>= 2);
+constraint forall(i in 1..9 where i!=7) (abs(capa[i,1]-capa[7,1])>= 2);
 
 %-C-
 /*Entre  las    capas  A  y  B  del elemento E4  (E4A  y E4B)  debe  haber  al menos  4  capas  de  otros elementos  (aplicados  de cualquier modo A o B).*/
@@ -48,3 +48,17 @@ constraint forall (i,j in 1..9 where j<i) (capa[j,1]-capa[i,1] < 0);
 constraint forall (i,j in 1..6 where j<i) (capa[j,2]-capa[i,2] > 0);
 
 solve satisfy;
+
+output["Capa: \t|1| \t|2| \t|3| \t|4| \t|5| \t|6| \t|7| \t|8| \t|9| \n"];
+
+output["A: \t"];
+
+output [show(capa[i,1]) ++ "\t"
+   | i in 1..9];
+   
+output ["\n"];
+
+output["B: \t"];  
+         
+output [show(capa[i,2]) ++ "\t"
+   | i in 1..9];
