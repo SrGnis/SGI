@@ -25,12 +25,12 @@ Dependencias:
 
 using namespace std;
 
-static GLuint texturaCarretera, texturaFondoD, texturaFondoN, texturaPepsi;
+static GLuint texturaCarretera, texturaFondoD, texturaFondoN, texturaPepsi, texturaMoto, texturaSuelo;
 
 float velocidad, angulo;
 float posx, girox, posz, giroz;
 
-bool noche = false, niebla = false;
+bool noche = false, niebla = false, solido = true;
 
 //Luz de luna
 GLfloat Al0[] = { 0.05 ,0.05 ,0.05 ,1.0 };
@@ -50,7 +50,7 @@ GLfloat directionalFarola[] = { 0.0f, -1.0, 0.0, 0.0 };
 GLfloat Dm[] = { 0.8, 0.8, 0.8, 1.0 };
 GLfloat Sm[] = { 0.3, 0.3, 0.3, 1.0 };
 
-GLfloat directionalView[] = { 0.0, -0.8, -1.4 };
+GLfloat directionalView[] = { 0.0, -0.9, -1.4 };
 GLfloat posicionFocal[] = { 0.0, 0.7, 0.0, 1.0 };
 
 float deriv(float u)
@@ -81,13 +81,17 @@ float *vectorN(float u)
 
 void crearPepsis() {
 	//calculamos la posicion relativa
-	if (noche) {
-		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-	}
-	else {
-		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+	if(solido)
+	{
+		if (noche) {
+			glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		}
+		else {
+			glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
+		}
 	}
+
 	float despFar = fmod(posx, 70.0f);
 	float xFirst = posx - despFar;
 
@@ -103,10 +107,15 @@ void crearPepsis() {
 		GLfloat pospos2[3] = { x, 2.5, mitad - 0.2 };
 		GLfloat pospos3[3] = { x, 0, mitad - 0.2 };
 		GLfloat pospos4[3] = { x, 0, mitad + 0.2 };
-		glBindTexture(GL_TEXTURE_2D, texturaPepsi);
-		quadtex(posPepsi1, posPepsi2, posPepsi3, posPepsi4,0.0, 1.0, 1.0, 0.0, 20, 20);
-		glBindTexture(GL_TEXTURE_2D, texturaCarretera);
-		quadtex(pospos1, pospos2, pospos3, pospos4, 0.2, 0.4, 0.4, 0.2, 20, 20);
+		if (solido) {
+			glBindTexture(GL_TEXTURE_2D, texturaPepsi);
+			quadtex(posPepsi1, posPepsi2, posPepsi3, posPepsi4, 0.0, 1.0, 1.0, 0.0, 20, 20);
+			glBindTexture(GL_TEXTURE_2D, texturaCarretera);
+			quadtex(pospos1, pospos2, pospos3, pospos4, 0.2, 0.4, 0.4, 0.2, 20, 20);
+		}else{
+			quad(posPepsi1, posPepsi2, posPepsi3, posPepsi4,3, 3);
+			quad(pospos1, pospos2, pospos3, pospos4,3, 3);
+		}
 	}
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
@@ -139,13 +148,15 @@ void crearfarolas() {
 
 void crearCarretera() {
 
-	glBindTexture(GL_TEXTURE_2D, texturaCarretera);
-	if (noche) {
-		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-	}else{ 
-		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE); 
+	if (solido) {
+		glBindTexture(GL_TEXTURE_2D, texturaCarretera);
+		if (noche) {
+			glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		}
+		else {
+			glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+		}
 	}
-
 	for (int i = posx / AlturaCam; i <= 80 + posx; i++) {//calculamos la carretera y la dibujamos crendo 75 quads
 		float u = i * AlturaCam;
 		float u2 = (i + 1)*AlturaCam;
@@ -157,9 +168,12 @@ void crearCarretera() {
 		GLfloat v1[3] = { u2, 0, AnchoCar / 2 + fDe2 };
 		GLfloat v2[3] = { u2, 0, (-1 * AnchoCar) / 2 + fDe2 };
 		GLfloat v3[3] = { u, 0, (-1 * AnchoCar) / 2 + fDe1 };
-
-		quadtex(v0, v1, v2, v3, 0.0, 1.0, 1.0, 0.0, 20, 20);
-
+		if (solido) {
+			quadtex(v0, v1, v2, v3, 0.0, 1.0, 1.0, 0.0, 20, 20);
+		}
+		else {
+			quad(v0, v1, v2, v3, 1, 3);
+		}
 	}
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
@@ -170,18 +184,25 @@ void crearFondo() {
 	gluQuadricNormals(qobj, GLU_SMOOTH);
 	glTranslatef(posx, -75, posz);
 	glRotatef(-90, 1, 0, 0);
-	if (!noche) {
-		glBindTexture(GL_TEXTURE_2D, texturaFondoD);
+	if (solido) {
+		if (!noche) {
+			glBindTexture(GL_TEXTURE_2D, texturaFondoD);
+		}
+		else {
+			glBindTexture(GL_TEXTURE_2D, texturaFondoN);
+		}
+		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+		gluQuadricTexture(qobj, true);
+		gluCylinder(qobj, 150, 150, 150, 50, 50);
+		glPopMatrix();
+		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 	else {
-		glBindTexture(GL_TEXTURE_2D, texturaFondoN);
+		glutWireCylinder(150,150,50,10);
+		glPopMatrix();
 	}
-	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-	gluQuadricTexture(qobj, true);
-	gluCylinder(qobj, 150, 150, 150, 100, 1000);
-	glPopMatrix();
-	glBindTexture(GL_TEXTURE_2D, 0);
 }
+
 
 void iniciarLuces() {
 	glShadeModel(GL_SMOOTH);
@@ -244,50 +265,6 @@ void iniciarLuces() {
 	glMaterialf(GL_FRONT, GL_SHININESS, 3.0);
 }
 
-void dibujaVelocidad() {
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glDepthMask(GL_FALSE);
-	glPushMatrix();
-	glColor4f(1.0, 0.0, 0.0, 0.6);
-	glPolygonMode(GL_FRONT, GL_FILL);
-	glBegin(GL_POLYGON);
-	glVertex3f(-1.0, 0.0, 0.0);
-	glVertex3f(-0.99 + velocidad / 30, 0.0, 0.0);
-	glVertex3f(-0.99 + velocidad / 30, 1.0, 0.0);
-	glVertex3f(-1.0, 1.0, 0.0);
-	glEnd();
-	glPopMatrix();
-	glDepthMask(GL_TRUE);
-	glDisable(GL_BLEND);
-	glColor3f(1.0, 1.0, 1.0);
-}
-
-void dibujaFlecha(float escala) {
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glDepthMask(GL_FALSE);
-	glPushMatrix();
-	glColor4f(1.0, 1.0, 0.0, 0.5);
-	glScalef(escala, escala, escala);
-	glPolygonMode(GL_FRONT, GL_FILL);
-	glBegin(GL_POLYGON);
-	glVertex3f(-0.4, -0.5, 0.0);
-	glVertex3f(0.4, -0.5, 0.0);
-	glVertex3f(0.4, 0.25, 0.0);
-	glVertex3f(-0.4, 0.25, 0.0);
-	glEnd();
-	glBegin(GL_POLYGON);
-	glVertex3f(-1.0, 0.25, 0.0);
-	glVertex3f(1.0, 0.25, 0.0);
-	glVertex3f(0.0, 1.0, 0.0);
-	glEnd();
-	glPopMatrix();
-	glDepthMask(GL_TRUE);
-	glDisable(GL_BLEND);
-	glColor3f(1.0, 1.0, 1.0);
-}
-
 void init()
 {
 	//Iniciamos el progrma
@@ -299,7 +276,7 @@ void init()
 
 	iniciarLuces();
 
-	glClearColor(0, 0, 0, 1);
+	glClearColor(1, 1, 1, 1);
 
 	glGenTextures(1, &texturaCarretera);
 	glBindTexture(GL_TEXTURE_2D, texturaCarretera);
@@ -325,6 +302,18 @@ void init()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
+	glGenTextures(1, &texturaMoto);
+	glBindTexture(GL_TEXTURE_2D, texturaMoto);
+	loadImageFile((char*)"moto.png");
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	glGenTextures(1, &texturaSuelo);
+	glBindTexture(GL_TEXTURE_2D, texturaSuelo);
+	loadImageFile((char*)"grass.jpg");
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	//Inicializamos lavariables de la camara
@@ -341,28 +330,38 @@ void display()
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	if (noche) {
+	if (noche & solido) {
 		glEnable(GL_LIGHTING);
 		glLightfv(GL_LIGHT1, GL_POSITION, posicionFocal);
 		glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, directionalView);
 		glLightfv(GL_LIGHT6, GL_POSITION, posicionFocal);
 		glLightfv(GL_LIGHT6, GL_SPOT_DIRECTION, directionalView);
 	}
+	else {
+		glDisable(GL_LIGHTING);
+	}
 	//Colocamos la camara
 	gluLookAt(posx, 1, posz, girox, 0, giroz, 0, 1, 0);
 
 	glColor3f(0.0f, 0.0f, 0.0f);
-	glPolygonMode(GL_FRONT, GL_FILL);
-	if (noche){
+	if (solido) {
+		glPolygonMode(GL_FRONT, GL_FILL);
+	}
+	else {
+		glPolygonMode(GL_FRONT, GL_LINE);
+	}
+
+	if (noche & solido) {
 		crearfarolas();
 	}
+
 	crearPepsis();
 
 	crearFondo();
 
 	crearCarretera();
 
-	if (niebla) {
+	if (niebla & solido) {
 		glEnable(GL_FOG);
 		if (noche) {
 			glFogfv(GL_FOG_COLOR, GRISOSCURO);
@@ -378,45 +377,64 @@ void display()
 
 	updateTitulo();
 
-	glLoadIdentity();
-	if (true) {
-		//DIBUJO DEL HUD
-		glDisable(GL_LIGHTING);
-		glPushMatrix();
-		glTranslatef(0.75, -0.75, -3.0);
-		glPushMatrix();//Flecha
-		glScalef(0.8*0.5, 2.5, 1);
-		glRotatef(-90, 1.0f, 0.0f, 0.0f);
-		glRotatef(-giroz / 60, 0.0f, 0.0f, 1.0f);
-		dibujaFlecha(0.5);
-		glPopMatrix();
-		glPushMatrix();//Velocidad
-		glTranslatef(-0.75f, -0.25f, 0.0f);
-		glScalef(1.0f, 0.25f, 1.0f);
-		dibujaVelocidad();
-		glPopMatrix();
-		glPushMatrix();
-		string vel = "Velocidad";
-		char* velC = (char*)vel.c_str();
-		glColor4f(1.0f, 0.0f, 0.0f, 1.0f);
-		glTranslatef(-1.75, 0.01f, 0.0f);
-		glRasterPos3f(0.0, 0.0, 0.0);
-		for (; *velC != '\0'; velC++) {
-			glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, *velC);
-		}
-		glPopMatrix();
-		glPushMatrix();
-		string dir = "Direccion";
-		char* dirC = (char*)dir.c_str();
-		glColor4f(1.0f, 1.0f, 0.0f, 1.0f);
-		glTranslatef(-0.2f, -0.2f, 0.0f);
-		glRasterPos3f(0.0, 0.0, 0.0);
-		for (; *dirC != '\0'; dirC++) {
-			glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, *dirC);
-		}
-		glPopMatrix();
-		glPopMatrix();
+	// *_________________________________________
+// Objetos traslucidos que van pegados a la camara
+	glDisable(GL_LIGHTING);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDepthMask(GL_FALSE);
+	glPushMatrix();		// Apilar la modelview
+	glLoadIdentity();	// Camara en posicion de defecto
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();		// Apilar la projection
+	glLoadIdentity();	// Vista por defecto
+	glOrtho(-1, 1, -1, 1, -1, 1);
+	glMatrixMode(GL_MODELVIEW);
+	gluLookAt(0, 0, 0, 0, 0, -1, 0, 1, 0);
+	if (solido) {
+		glBindTexture(GL_TEXTURE_2D, texturaMoto);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+		glBegin(GL_POLYGON);
+		glNormal3f(0, 0, 1);
+
+		glTexCoord2f(0, 0);
+		glVertex3f(-0.5, -1, 0);
+
+		glTexCoord2f(1, 0);
+		glVertex3f(0.5, -1, 0);
+
+		glTexCoord2f(1, 1);
+		glVertex3f(0.5, -0.5, 0);
+
+		glTexCoord2f(0, 1);
+		glVertex3f(-0.5, -0.5, 0);
+
+		glEnd();
 	}
+	else 
+	{
+		glPolygonMode(GL_FRONT, GL_LINE);
+		glBegin(GL_POLYGON);
+		glNormal3f(0, 0, 1);
+
+		glVertex3f(-0.5, -1, 0);
+
+		glVertex3f(0.5, -1, 0);
+
+		glVertex3f(0.5, -0.5, 0);
+
+		glVertex3f(-0.5, -0.5, 0);
+
+		glEnd();
+	}
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+	glDepthMask(GL_TRUE);
+	glDisable(GL_BLEND);
 
 	glutSwapBuffers();
 }
@@ -493,6 +511,12 @@ void onKey(unsigned char tecla, int x, int y) {
 	case 'N':
 		niebla = !niebla;
 		break;
+	case 's':
+		solido = !solido;
+		break;
+	case 'S':
+		solido = !solido;
+		break;
 	}
 }
 
@@ -501,7 +525,6 @@ void main(int argc, char** argv)
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
 	glutInitWindowSize(600, 600);
-	glutInitWindowPosition(50, 200);
 	glutCreateWindow(PROYECTO);
 
 	init();
